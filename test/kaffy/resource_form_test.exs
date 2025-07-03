@@ -79,6 +79,19 @@ defmodule Kaffy.ResourceFormTest do
       assert html =~ ~r/^<textarea/
       assert html =~ ~r/class="kaffy-editor"/
     end
+
+    test "render association with nested form fields" do
+      comments = [%TravelSchema.Comment{author_id: 1, body: "hi"}]
+      html =
+        render_field(
+          :comments,
+          schema: %TravelSchema{comments: comments},
+          field_opts: %{form_fields: [author_id: nil, body: %{type: :textarea}]}
+        )
+
+      assert html =~ ~r/dummy\[comments\]\[0\]\[author_id\]/
+      assert html =~ ~r/dummy\[comments\]\[0\]\[body\]/
+    end
   end
 
   def render_field(name, opts \\ Keyword.new()) do

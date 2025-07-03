@@ -90,6 +90,32 @@ defmodule Kaffy.ResourceForm do
     schema = schema.__struct__
 
     case type do
+      {:assoc, %Ecto.Association.Has{} = assoc} ->
+        assoc_schema = assoc.related
+        assoc_fields =
+          Map.get(options, :form_fields, Kaffy.ResourceSchema.form_fields(assoc_schema))
+          |> Enum.map(fn {f, opts} ->
+            defaults = Kaffy.ResourceSchema.default_field_options(assoc_schema, f)
+            {f, Map.merge(defaults, opts || %{})}
+          end)
+
+        inputs_for(form, field, fn fp ->
+          assoc_changeset = fp.source
+
+          [
+            {:safe, ~s(<div class="card ml-3" style="padding:15px;">)},
+            Enum.reduce(assoc_fields, [], fn {f, assoc_opts}, all ->
+              content_tag :div, class: "form-group" do
+                [
+                  [form_label(fp, f), form_field(assoc_changeset, fp, {f, assoc_opts}, class: "form-control")]
+                  | all
+                ]
+              end
+            end),
+            {:safe, "</div>"}
+          ]
+        end)
+
       {:embed, %{cardinality: :one}} ->
         embed = Kaffy.ResourceSchema.embed_struct(schema, field)
         embed_fields = Kaffy.ResourceSchema.fields(embed)

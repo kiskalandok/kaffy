@@ -20,6 +20,16 @@ defmodule Fixtures.TravelSchema do
     end
   end
 
+  defmodule Comment do
+    use Ecto.Schema
+
+    schema "comments" do
+      field(:author_id, :integer)
+      field(:body, :string)
+      belongs_to(:travel, Fixtures.TravelSchema)
+    end
+  end
+
   schema "travels" do
     field(:title, :string)
     field(:description, :string)
@@ -33,6 +43,7 @@ defmodule Fixtures.TravelSchema do
     field(:means_of_transport, {:array, Ecto.Enum}, values: [:train, :plane, :car, :bus, :ferry])
     embeds_many(:stays, Stay)
     embeds_one(:metadata, Metadata)
+    has_many(:comments, Comment)
     timestamps()
   end
 end
