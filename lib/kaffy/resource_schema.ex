@@ -179,8 +179,10 @@ defmodule Kaffy.ResourceSchema do
         cond do
           value.__struct__ in [NaiveDateTime, DateTime, Date, Time] ->
             value
+
           value.__struct__ in [Geo.Point] ->
             Kaffy.Utils.json().encode!(value, escape: :html_safe, pretty: true)
+
           true ->
             Map.from_struct(value)
             |> Map.drop([:__meta__])
@@ -216,8 +218,10 @@ defmodule Kaffy.ResourceSchema do
         cond do
           value.__struct__ in [NaiveDateTime, DateTime, Date, Time] ->
             value
+
           value.__struct__ in [Geo.Point] ->
             Kaffy.Utils.json().encode!(value, escape: :html_safe, pretty: true)
+
           true ->
             Map.from_struct(value)
             |> Map.drop([:__meta__])
@@ -304,6 +308,14 @@ defmodule Kaffy.ResourceSchema do
 
   def embed_struct(schema, name) do
     embed(schema, name).related
+  end
+
+  def assoc(schema, name) do
+    schema.__schema__(:association, name)
+  end
+
+  def assoc_struct(schema, name) do
+    assoc(schema, name).related
   end
 
   def search_fields(resource) do

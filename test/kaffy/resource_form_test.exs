@@ -2,6 +2,7 @@ defmodule Kaffy.ResourceFormTest do
   use ExUnit.Case, async: true
   alias Kaffy.ResourceForm
   alias Fixtures.TravelSchema
+  alias Fixtures.CommentSchema
 
   describe "form_field/4" do
     test "render string field" do
@@ -81,12 +82,16 @@ defmodule Kaffy.ResourceFormTest do
     end
 
     test "render association with nested form fields" do
-      comments = [%TravelSchema.Comment{author_id: 1, body: "hi"}]
+      comments = [
+        %CommentSchema{author_id: 1, body: "hi"},
+        %CommentSchema{author_id: 2, body: "hello"}
+      ]
+
       html =
         render_field(
           :comments,
           schema: %TravelSchema{comments: comments},
-          field_opts: %{form_fields: [author_id: nil, body: %{type: :textarea}]}
+          field_opts: %{input_options: [append: %CommentSchema{}], form_fields: [author_id: nil, body: %{type: :textarea}]}
         )
 
       assert html =~ ~r/dummy\[comments\]\[0\]\[author_id\]/

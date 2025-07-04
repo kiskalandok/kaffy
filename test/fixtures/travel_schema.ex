@@ -20,22 +20,16 @@ defmodule Fixtures.TravelSchema do
     end
   end
 
-  defmodule Comment do
-    use Ecto.Schema
-
-    schema "comments" do
-      field(:author_id, :integer)
-      field(:body, :string)
-      belongs_to(:travel, Fixtures.TravelSchema)
-    end
-  end
-
   schema "travels" do
     field(:title, :string)
     field(:description, :string)
     field(:number_of_people, :integer)
     field(:requires_passport, :boolean)
-    field(:travel_type, Ecto.Enum, values: [business: "business", leisure: "leisure", other: "undisclosed"])
+
+    field(:travel_type, Ecto.Enum,
+      values: [business: "business", leisure: "leisure", other: "undisclosed"]
+    )
+
     field(:start_time, :utc_datetime)
     field(:local_start_time, :naive_datetime)
     field(:end_date, :date)
@@ -43,7 +37,7 @@ defmodule Fixtures.TravelSchema do
     field(:means_of_transport, {:array, Ecto.Enum}, values: [:train, :plane, :car, :bus, :ferry])
     embeds_many(:stays, Stay)
     embeds_one(:metadata, Metadata)
-    has_many(:comments, Comment)
+    has_many(:comments, Fixtures.CommentSchema)
     timestamps()
   end
 end

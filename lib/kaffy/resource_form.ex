@@ -90,24 +90,28 @@ defmodule Kaffy.ResourceForm do
     schema = schema.__struct__
 
     case type do
-      {:assoc, %Ecto.Association.Has{} = assoc} ->
-        assoc_schema = assoc.related
-        assoc_fields =
-          Map.get(options, :form_fields, Kaffy.ResourceSchema.form_fields(assoc_schema))
-          |> Enum.map(fn {f, opts} ->
-            defaults = Kaffy.ResourceSchema.default_field_options(assoc_schema, f)
-            {f, Map.merge(defaults, opts || %{})}
-          end)
+      {:assoc, %Ecto.Association.Has{cardinality: :many} = _assoc} ->
+        assoc_schema = Kaffy.ResourceSchema.assoc_struct(schema, field)
+        assoc_fields = Kaffy.ResourceSchema.form_fields(assoc_schema)
+        # For some reason, we just need one element from the list
+        assoc_data = Map.get(data, field) |> List.first()
+        assoc_changeset = Ecto.Changeset.change(assoc_data || assoc_schema.__struct__())
 
-        inputs_for(form, field, fn fp ->
-          assoc_changeset = fp.source
+        input_options = Map.get(options, :input_options) || []
+        options = Map.get(options, :form_fields, [])
 
+        inputs_for(form, field, input_options, fn fp ->
           [
             {:safe, ~s(<div class="card ml-3" style="padding:15px;">)},
-            Enum.reduce(assoc_fields, [], fn {f, assoc_opts}, all ->
+            Enum.reduce(assoc_fields, [], fn {f, assoc_options}, all ->
+              assoc_options = Map.merge(assoc_options, Keyword.get(options, f) || %{})
+
               content_tag :div, class: "form-group" do
                 [
-                  [form_label(fp, f), form_field(assoc_changeset, fp, {f, assoc_opts}, class: "form-control")]
+                  [
+                    form_label(fp, f),
+                    form_field(assoc_changeset, fp, {f, assoc_options}, class: "form-control")
+                  ]
                   | all
                 ]
               end
@@ -119,7 +123,7 @@ defmodule Kaffy.ResourceForm do
       {:embed, %{cardinality: :one}} ->
         embed = Kaffy.ResourceSchema.embed_struct(schema, field)
         embed_fields = Kaffy.ResourceSchema.fields(embed)
-        embed_changeset = Ecto.Changeset.change(Map.get(data, field) || embed.__struct__)
+        embed_changeset = Ecto.Changeset.change(Map.get(data, field) || embed.__struct__())
 
         inputs_for(form, field, fn fp ->
           [
@@ -149,8 +153,11 @@ defmodule Kaffy.ResourceForm do
 
       :id ->
         case field in Kaffy.ResourceSchema.primary_keys(schema) do
-          true -> text_input(form, field, opts)
-          false -> text_or_assoc(conn, schema, form, field, type, opts)
+          true ->
+            text_input(form, field, opts)
+
+          false ->
+            text_or_assoc(conn, schema, form, field, type, opts)
         end
 
       t when t in [:binary_id, Ecto.ULID] ->
@@ -410,6 +417,7 @@ defmodule Kaffy.ResourceForm do
                       disabled: opts[:readonly],
                       aria_describedby: field
                     )
+
                   _ ->
                     text_input(form, field,
                       class: "form-control",
@@ -482,6 +490,7 @@ defmodule Kaffy.ResourceForm do
         case type do
           :id ->
             number_input(form, field, opts)
+
           _ ->
             text_input(form, field, opts)
         end
